@@ -13,7 +13,7 @@ const username = process.env.USERNAME;
 const password = process.env.PASSWORD;
 const machineId = process.env.MACHINEID;
 
-const discord_prefix = process.env.DISCORD_PREFIX;
+const message_prefix = process.env.MESSAGE_PREFIX;
 const discord_bot_token = process.env.DISCORD_BOT_TOKEN;
 const discord_channel_id = process.env.DISCORD_CHANNEL_ID;
 const discord_message_id = process.env.DISCORD_MESSAGE_ID;
@@ -51,7 +51,7 @@ const userDirectory = {}
 
 const printOnlineUsers = async () => {
     let message = `ONLINE LIST: (最終更新: <t:${Math.floor(Date.now() / 1000)}:R>)\n`;
-    message += discord_prefix + '\n';
+    message += message_prefix + '\n';
     message += Object.values(onlineUsers).join('\n');
     console.log(message);
 
