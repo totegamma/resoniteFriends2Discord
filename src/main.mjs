@@ -50,7 +50,7 @@ const onlineUsers = {}
 const userDirectory = {}
 
 const printOnlineUsers = async () => {
-    let message = `ONLINE LIST: (譛邨よ峩譁ｰ: <t:${Math.floor(Date.now() / 1000)}:R>)\n`;
+    let message = `ONLINE LIST: (最終更新: <t:${Math.floor(Date.now() / 1000)}:R>)\n`;
     message += discord_prefix + '\n';
     message += Object.values(onlineUsers).join('\n');
     console.log(message);
