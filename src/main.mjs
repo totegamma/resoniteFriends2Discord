@@ -20,6 +20,16 @@ const discord_message_id = process.env.DISCORD_MESSAGE_ID;
 
 console.log('username: ' + username);
 
+// login to discord
+const client = new Client({ intents: [] });
+
+client.on('ready', () => {
+    console.log(`Logged in as ${client.user.tag}!`);
+});
+
+client.login(discord_bot_token);
+
+
 const loginreq = await fetch("https://api.resonite.com/userSessions", {
     method: 'POST',
     headers: {
@@ -47,12 +57,20 @@ const token = login.entity.token;
 const authHeader = `res ${userID}:${token}`;
 
 const onlineUsers = {}
-const userDirectory = {}
+const userDict = {}
+let userSessionDict = {}
 
 const printOnlineUsers = async () => {
     let message = `ONLINE LIST: (最終更新: <t:${Math.floor(Date.now() / 1000)}:R>)\n`;
     message += message_prefix + '\n';
-    message += Object.values(onlineUsers).join('\n');
+
+    for (const [userId, userSession] of Object.entries(onlineUsers)) {
+        const sessions = userSessionDict[userId] ? userSessionDict[userId].join(', ') : 'Private';
+        const user = await getUserInfo(userId);
+        const device = userSession.outputDevice ? `(${userSession.outputDevice})` : '';
+        message += `${user.username}${device} @${sessions}\n`
+    }
+
     console.log(message);
 
     const channel = await client.channels.fetch(discord_channel_id);
@@ -62,14 +80,14 @@ const printOnlineUsers = async () => {
 }
 
 const getUserInfo = async (userId) => {
-    if (!userDirectory[userId]) {
+    if (!userDict[userId]) {
         const res = await fetch(`https://api.resonite.com/users/${userId}`, {
             method: 'GET',
         })
         const user = await res.json();
-        userDirectory[userId] = user;
+        userDict[userId] = user;
     }
-    return await userDirectory[userId];
+    return await userDict[userId];
 }
 
 const connection = new HubConnectionBuilder()
@@ -88,8 +106,7 @@ const connection = new HubConnectionBuilder()
 connection.on("receivestatusupdate", async (message) => {
     if (message.onlineStatus === "Online") {
         if (!onlineUsers[message.userId]) {
-            const user = await getUserInfo(message.userId);
-            onlineUsers[message.userId] = user.username;
+            onlineUsers[message.userId] = message;
             printOnlineUsers();
         }
     } else {
@@ -100,23 +117,38 @@ connection.on("receivestatusupdate", async (message) => {
     }
 })
 
-// login to discord
-const client = new Client({ intents: [] });
+async function updateSessionCache() {
+    console.log('updating session cache...');
+    const sessionsResponse = await fetch('https://api.resonite.com/sessions?includeEmptyHeadless=false&minActiveUsers=1');
+    const sessionCache = await sessionsResponse.json();
+    let dict = {};
+    for (const session of sessionCache) {
+        for (const user of session.sessionUsers) {
+            if (dict[user.userID]) {
+                dict[user.userID].push(session.name);
+            } else {
+                dict[user.userID] = [session.name];
+            }
+        }
+    }
 
-client.on('ready', () => {
-    console.log(`Logged in as ${client.user.tag}!`);
-});
+    userSessionDict = dict;
+    printOnlineUsers();
+}
 
-client.login(discord_bot_token);
-
+setInterval(
+    updateSessionCache,
+    1000 * 60
+);
+await updateSessionCache();
 
 console.log('connecting...');
-const conn = await connection.start();
+await connection.start();
 console.log('connected');
 
-const init = await connection.invoke("InitializeStatus");
-//console.log('init:', init);
+await connection.invoke("InitializeStatus");
+await connection.invoke("RequestStatus", null, false);
 
-const req = await connection.invoke("RequestStatus", null, false);
-//console.log('req:', req);
+
+console.log('READY');
 
