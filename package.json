@@ -1,0 +1,17 @@
+{
+  "name": "resoniteFriends2Discord",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/main.mjs",
+  "scripts": {
+      "start": "node src/main.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@microsoft/signalr": "^7.0.12",
+    "discord.js": "^14.13.0",
+    "dotenv": "^16.3.1"
+  }
+}
